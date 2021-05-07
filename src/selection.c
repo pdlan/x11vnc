@@ -310,7 +310,6 @@ void cutbuffer_send(void) {
 
 	RAWFB_RET_VOID
 
-	/* read the property value into cutbuffer_str: */
 	do {
 		if (XGetWindowProperty(dpy, DefaultRootWindow(dpy),
 		    XA_CUT_BUFFER0, nitems/4, PROP_MAX/16, False,
@@ -352,7 +351,7 @@ void cutbuffer_send(void) {
 	}
 	cutbuffer_len = len = strlen(cutbuffer_str);
 	if (check_sel_direction("send", "cutbuffer_send", cutbuffer_str, len)) {
-		rfbSendServerCutText(screen, cutbuffer_str, len);
+		rfbSendServerCutTextUTF8(screen, cutbuffer_str, len, cutbuffer_str, len);
 	}
 #endif	/* NO_X11 */
 }
@@ -384,6 +383,7 @@ void selection_send(XEvent *ev) {
 	unsigned long nitems = 0, bytes_after = 0;
 	unsigned char* data = NULL;
 	char *selection_str;
+	XEvent ev2;
 
 	RAWFB_RET_VOID
 	/*
@@ -411,12 +411,18 @@ void selection_send(XEvent *ev) {
 	} else {
 		return;
 	}
-	
+
+	type = XInternAtom(dpy, "UTF8_STRING", False);
 	oldlen = strlen(selection_str);
 	strncpy(before, selection_str, CHKSZ);
 
 	selection_str[0] = '\0';
 	slen = 0;
+	XConvertSelection(dpy, ev->xselection.selection, type, ev->xselection.property, ev->xselection.requestor, CurrentTime);
+	do {
+		XNextEvent(dpy, &ev2);
+	} while (ev2.type != SelectionNotify || ev2.xselection.selection != ev->xselection.selection);
+
 
 	/* read in the current value of PRIMARY or CLIPBOARD: */
 	do {
@@ -502,7 +508,7 @@ if (debug_sel) fprintf(stderr, "selection_send: data: '%s' dlen: %d nitems: %lu 
 		clipboard_len = len;
 	}
 	if (check_sel_direction("send", "selection_send", selection_str, len)) {
-		rfbSendServerCutText(screen, selection_str, len);
+		rfbSendServerCutTextUTF8(screen, selection_str, len, selection_str, len);
 	}
 #endif	/* NO_X11 */
 }
@@ -540,7 +546,7 @@ void resend_selection(char *type) {
 		len = primary_len;
 	}
 	if (check_sel_direction("send", "selection_send", selection_str, len)) {
-		rfbSendServerCutText(screen, selection_str, len);
+		rfbSendServerCutTextUTF8(screen, selection_str, len, selection_str, len);
 	}
 #endif	/* NO_X11 */
 }

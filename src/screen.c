@@ -3676,6 +3676,7 @@ void initialize_screen(int *argc, char **argv, XImage *fb) {
 	screen->kbdAddEvent = keyboard;
 	screen->ptrAddEvent = pointer_event;
 	screen->setXCutText = xcut_receive;
+	screen->setXCutTextUTF8 = xcut_receive;
 	screen->setTranslateFunction = set_xlate_wrapper;
 
 	screen->kbdReleaseAllKeys = kbd_release_all_keys; 
